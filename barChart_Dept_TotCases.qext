@@ -1,10 +1,10 @@
 {
 	"name": "barChart_Dept_TotCases",
-	"description": "Basic empty visualization template",
+	"description": "Basic bar chart visualization template",
 	"type": "visualization",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"icon": "extension",
-	"author": "",
+	"author": "Sushant",
 	"homepage": "",
 	"keywords": "qlik-sense, visualization",
 	"license": "",
