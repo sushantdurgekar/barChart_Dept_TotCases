@@ -101,15 +101,19 @@ define([
                   ref: "myproperties.LorientationX",
                   options: [
                     {
-                      value: [-45, -5],
+                      value: "tilted",
                       label: "Tilted",
                     },
                     {
-                      value: [0, 10],
+                      value: "horizontal",
                       label: "Horizontal",
                     },
+                    {
+                      value: "auto",
+                      label: "Auto",
+                    },
                   ],
-                  defaultValue: [0, 10],
+                  defaultValue: "auto",
                 },
               },
             },
@@ -132,7 +136,7 @@ define([
                       label: "Off",
                     },
                   ],
-                  defaultValue: "false",
+                  defaultValue: false,
                 },
               },
             },
@@ -404,8 +408,25 @@ define([
         //     layout.myproperties.LorientationX[0] +
         //     ")"
         // )
-        .attr("transform", "translate(0,0)rotate(0)")
-        .attr("text-anchor", "middle");
+        // .attr("transform", "translate(0,0)rotate(0)")
+        .attr("transform", () => {
+          if (layout.myproperties.LorientationX == "tilted") {
+            return "translate(-5,0)rotate(-45)";
+          } else if (
+            layout.myproperties.LorientationX == "horizontal" ||
+            layout.myproperties.LorientationX == "auto"
+          ) {
+            return "translate(0,0)rotate(0)";
+          }
+          return "translate(0,0)rotate(0)";
+        })
+        .attr("text-anchor", () => {
+          if (layout.myproperties.LorientationX == "tilted") {
+            return "end";
+          } else {
+            return "middle";
+          }
+        });
 
       xLable
         .append("text")
