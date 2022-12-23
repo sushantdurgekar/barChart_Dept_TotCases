@@ -2,7 +2,7 @@
 	"name": "barChart_Dept_TotCases",
 	"description": "Basic bar chart visualization template",
 	"type": "visualization",
-	"version": "1.0.1",
+	"version": "1.0.1.5",
 	"icon": "extension",
 	"author": "Sushant",
 	"homepage": "",
