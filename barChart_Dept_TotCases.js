@@ -67,6 +67,27 @@ define([
                     index: "-1",
                   },
                 },
+                yScale: {
+                  type: "string",
+                  component: "dropdown",
+                  label: "Y-axis Scaling",
+                  ref: "myproperties.scalingY",
+                  options: [
+                    {
+                      value: "wide",
+                      label: "Wide",
+                    },
+                    {
+                      value: "medium",
+                      label: "Medium",
+                    },
+                    {
+                      value: "narrow",
+                      label: "Narrow",
+                    },
+                  ],
+                  defaultValue: "medium",
+                },
                 xAxisPos: {
                   type: "string",
                   component: "dropdown",
@@ -151,6 +172,60 @@ define([
                   defaultValue: {
                     color: "006580",
                     index: "-1",
+                  },
+                },
+                BarOpacity: {
+                  type: "number",
+                  component: "slider",
+                  label: "Opacity",
+                  ref: "myproperties.barOpacity",
+                  min: 0.3,
+                  max: 1,
+                  step: 0.05,
+                  defaultValue: 0.95,
+                },
+                GridFormate: {
+                  label: "Grid",
+                  items: {
+                    MyTooltipSwitch: {
+                      type: "boolean",
+                      label: "Grid",
+                      component: "switch",
+                      ref: "gridSwitch",
+                      options: [
+                        {
+                          value: true,
+                          label: "On",
+                        },
+                        {
+                          value: false,
+                          label: "Off",
+                        },
+                      ],
+                      defaultValue: true,
+                    },
+                  },
+                },
+                ValueLabels: {
+                  label: "Value Labels",
+                  items: {
+                    MyTooltipSwitch: {
+                      type: "boolean",
+                      label: "Value Label",
+                      component: "switch",
+                      ref: "valueLabelSwitch",
+                      options: [
+                        {
+                          value: true,
+                          label: "On",
+                        },
+                        {
+                          value: false,
+                          label: "Off",
+                        },
+                      ],
+                      defaultValue: true,
+                    },
                   },
                 },
               },
@@ -325,6 +400,7 @@ define([
             // return color;
           }
         })
+        .attr("opacity", `${layout.myproperties.barOpacity}`)
         .attr("class", "indBar")
         .on("mouseover", mouseover)
         .on("mousemove", mousemove)
@@ -332,21 +408,23 @@ define([
       // .append("title")
       // .text((d) => d[1]);
 
-      console.log(svg);
+      // console.log(svg);
       // goat.style("overflow-x", "scroll");
-      goat
-        .selectAll("text")
-        .data(dataSet1)
-        .enter()
-        // Add your code below this line
-        .append("text")
-        .attr("x", (d, i) => xScale(d[1]) + xScale.bandwidth() / 2)
-        .attr("y", (d, i) => yScale(d[0]) - 3)
-        .text((d) => d[0])
-        //.attr("transform","rotate(-45)")
-        .style("font-size", "10px")
-        .style("text-anchor", "middle")
-        .attr("fill", "red");
+      if (layout.valueLabelSwitch) {
+        goat
+          .selectAll("text")
+          .data(dataSet1)
+          .enter()
+          // Add your code below this line
+          .append("text")
+          .attr("x", (d, i) => xScale(d[1]) + xScale.bandwidth() / 2)
+          .attr("y", (d, i) => yScale(d[0]) - 3)
+          .text((d) => d[0])
+          //.attr("transform","rotate(-45)")
+          .style("font-size", "15px")
+          .style("text-anchor", "middle")
+          .attr("fill", "red");
+      }
       goat
         .append("text")
         .attr("transform", "translate(0,0)")
@@ -371,10 +449,30 @@ define([
       let yAxis = () => {
         if (layout.myproperties.positionY == "right") {
           console.log(layout.myproperties.positionY);
-          return d3.axisRight(yScale);
+          return d3
+            .axisRight(yScale)
+            .ticks(
+              layout.myproperties.scalingY == "wide"
+                ? 3
+                : layout.myproperties.scalingY == "medium"
+                ? 8
+                : layout.myproperties.scalingY == "narrow"
+                ? 18
+                : 8
+            );
         }
         if (layout.myproperties.positionY == "left") {
-          return d3.axisLeft(yScale);
+          return d3
+            .axisLeft(yScale)
+            .ticks(
+              layout.myproperties.scalingY == "wide"
+                ? 3
+                : layout.myproperties.scalingY == "medium"
+                ? 8
+                : layout.myproperties.scalingY == "narrow"
+                ? 18
+                : 8
+            );
         }
         return d3.axisLeft(yScale);
       };
@@ -474,7 +572,7 @@ define([
           //     padding * layout.myproperties.positionY) +
           //   ",0)"
         )
-        .call(yAxis());
+        .call(yAxis().tickFormat((d) => `${d3.format(".2s")(d)}`));
       yLabel.select("path").style("stroke", layout.yAxisColor.color);
       // console.log(d3.max(dataset1, (d) => d[0]));
       yLabel
@@ -496,6 +594,50 @@ define([
         .attr("fill", "black")
         // .attr("stroke", "black")
         .text(layout.qHyperCube.qMeasureInfo[0].qFallbackTitle);
+
+      //Grid
+      if (layout.gridSwitch === true) {
+        let xGrid = g
+          .append("g")
+          .attr("transform", () => {
+            if (layout.myproperties.positionX == "top") {
+              return "translate(0," + padding + ")";
+            }
+            if (layout.myproperties.positionX == "bottom") {
+              return "translate(0," + (h - padding) + ")";
+            }
+          })
+          .attr("opacity", "0.4")
+          .call(xAxis().tickSize(-(h - padding * 2)))
+          .selectAll("text")
+          .style("opacity", "0");
+        xGrid.select("path").style("stroke", "white");
+
+        let yGrid = g
+          .append("g")
+          // .attr("transform", "translate(" + padding + ",0)")
+          .attr(
+            "transform",
+            () => {
+              if (layout.myproperties.positionY === "left") {
+                return "translate(" + padding + ",0)";
+              }
+              if (layout.myproperties.positionY === "right") {
+                // console.log(layout.myproperties.positionY);
+                return "translate(" + (w - padding) + ",0)";
+              }
+            }
+            // "translate(" +
+            //   (w * layout.myproperties.positionY +
+            //     padding * layout.myproperties.positionY) +
+            //   ",0)"
+          )
+          .attr("opacity", "0.4")
+          .call(yAxis().tickSize(-(w - padding * 2)))
+          .selectAll("text")
+          .style("opacity", "0");
+        yGrid.select("path").style("stroke", "white");
+      }
 
       //needed for export
       return qlik.Promise.resolve();
