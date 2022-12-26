@@ -177,7 +177,7 @@ define([
                 BarOpacity: {
                   type: "number",
                   component: "slider",
-                  label: "Opacity",
+                  label: "Bar Opacity",
                   ref: "myproperties.barOpacity",
                   min: 0.3,
                   max: 1,
@@ -203,6 +203,37 @@ define([
                         },
                       ],
                       defaultValue: true,
+                    },
+                    gridScale: {
+                      type: "string",
+                      component: "dropdown",
+                      label: "Grid Scaling",
+                      ref: "myproperties.gridScaling",
+                      options: [
+                        {
+                          value: "wide",
+                          label: "Wide",
+                        },
+                        {
+                          value: "medium",
+                          label: "Medium",
+                        },
+                        {
+                          value: "narrow",
+                          label: "Narrow",
+                        },
+                      ],
+                      defaultValue: "medium",
+                    },
+                    GridOpacity: {
+                      type: "number",
+                      component: "slider",
+                      label: "Grid Opacity",
+                      ref: "myproperties.gridOpacity",
+                      min: 0.1,
+                      max: 1,
+                      step: 0.05,
+                      defaultValue: 0.35,
                     },
                   },
                 },
@@ -240,15 +271,15 @@ define([
       exportData: false,
     },
     paint: function ($element, layout) {
-      console.log($element, layout);
+      // console.log($element, layout);
       $element.html(`<div id=${layout.qInfo.qId}></div>`);
       //add your rendering code here
 
-      console.log(layout);
-      console.log(
-        layout.qHyperCube.qDataPages[0].qMatrix[0][0].qText,
-        layout.qHyperCube.qDataPages[0].qMatrix[0][1].qNum
-      );
+      // console.log(layout);
+      // console.log(
+      //   layout.qHyperCube.qDataPages[0].qMatrix[0][0].qText,
+      //   layout.qHyperCube.qDataPages[0].qMatrix[0][1].qNum
+      // );
       // console.log(
       //   layout.qHyperCube.qDataPages[0].qMatrix.map((d) => [
       //     d[0].qText,
@@ -259,7 +290,7 @@ define([
         d[1].qNum,
         d[0].qText,
       ]);
-      console.log(dataSet1);
+      // console.log(dataSet1);
 
       // const dataset = [12, 31, 22, 17, 25, 18, 29, 14, 9];
       // const dataset = [
@@ -294,7 +325,8 @@ define([
         .append("svg")
         .attr("width", w)
         .attr("height", h);
-      console.log(layout);
+      // console.log(layout);
+      console.log(layout.qHyperCube.qMeasureInfo[0].qNumFormat);
 
       const goat = svg.append("g").attr("transform", "translate(0,0)");
       // const xScale = d3
@@ -607,8 +639,20 @@ define([
               return "translate(0," + (h - padding) + ")";
             }
           })
-          .attr("opacity", "0.4")
-          .call(xAxis().tickSize(-(h - padding * 2)))
+          .attr("opacity", `${layout.myproperties.gridOpacity}`)
+          .call(
+            xAxis()
+              .tickSize(-(h - padding * 2))
+              .ticks(
+                layout.myproperties.gridScaling == "wide"
+                  ? 3
+                  : layout.myproperties.gridScaling == "medium"
+                  ? 8
+                  : layout.myproperties.gridScaling == "narrow"
+                  ? 18
+                  : 8
+              )
+          )
           .selectAll("text")
           .style("opacity", "0");
         xGrid.select("path").style("stroke", "white");
@@ -632,8 +676,20 @@ define([
             //     padding * layout.myproperties.positionY) +
             //   ",0)"
           )
-          .attr("opacity", "0.4")
-          .call(yAxis().tickSize(-(w - padding * 2)))
+          .attr("opacity", `${layout.myproperties.gridOpacity}`)
+          .call(
+            yAxis()
+              .tickSize(-(w - padding * 2))
+              .ticks(
+                layout.myproperties.gridScaling == "wide"
+                  ? 3
+                  : layout.myproperties.gridScaling == "medium"
+                  ? 8
+                  : layout.myproperties.gridScaling == "narrow"
+                  ? 18
+                  : 8
+              )
+          )
           .selectAll("text")
           .style("opacity", "0");
         yGrid.select("path").style("stroke", "white");
