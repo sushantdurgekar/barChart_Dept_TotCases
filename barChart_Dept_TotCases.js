@@ -48,11 +48,11 @@ define([
                   options: [
                     {
                       value: "left",
-                      label: "left",
+                      label: "Left",
                     },
                     {
                       value: "right",
-                      label: "right",
+                      label: "Right",
                     },
                   ],
                   defaultValue: "left",
@@ -96,11 +96,11 @@ define([
                   options: [
                     {
                       value: "top",
-                      label: "top",
+                      label: "Top",
                     },
                     {
                       value: "bottom",
-                      label: "bottom",
+                      label: "Bottom",
                     },
                   ],
                   defaultValue: "bottom",
@@ -164,6 +164,35 @@ define([
             Chart: {
               label: "Chart",
               items: {
+                chartLabel: {
+                  type: "string",
+                  label: "Chart Heading",
+                  component: "buttongroup",
+                  ref: "myproperties.chartHeading",
+                  options: [
+                    {
+                      value: "bold",
+                      label: "Bold",
+                      tooltip: "Select for Bold",
+                    },
+                    {
+                      value: "italic",
+                      label: "Italic",
+                      tooltip: "Select for Italic",
+                    },
+                    {
+                      value: "both",
+                      label: "Both",
+                      tooltip: "Select for Bold and Italic",
+                    },
+                    {
+                      value: "none",
+                      label: "None",
+                      tooltip: "Select for None",
+                    },
+                  ],
+                  defaultValue: "none",
+                },
                 MyColorPicker: {
                   label: "Bar Color",
                   component: "color-picker",
@@ -225,6 +254,27 @@ define([
                       ],
                       defaultValue: "medium",
                     },
+                    gridLineFormate: {
+                      type: "string",
+                      component: "dropdown",
+                      label: "Grid Line Formatting",
+                      ref: "myproperties.gridLineFormate",
+                      options: [
+                        {
+                          value: "dashed",
+                          label: "Dashed",
+                        },
+                        {
+                          value: "dotted",
+                          label: "Dotted",
+                        },
+                        {
+                          value: "line",
+                          label: "Line",
+                        },
+                      ],
+                      defaultValue: "line",
+                    },
                     GridOpacity: {
                       type: "number",
                       component: "slider",
@@ -234,6 +284,28 @@ define([
                       max: 1,
                       step: 0.05,
                       defaultValue: 0.35,
+                    },
+                  },
+                },
+                LegendOption: {
+                  label: "Legend",
+                  items: {
+                    MyTooltipSwitch: {
+                      type: "boolean",
+                      label: "Legend",
+                      component: "switch",
+                      ref: "legendSwitch",
+                      options: [
+                        {
+                          value: true,
+                          label: "On",
+                        },
+                        {
+                          value: false,
+                          label: "Off",
+                        },
+                      ],
+                      defaultValue: false,
                     },
                   },
                 },
@@ -325,7 +397,7 @@ define([
         .append("svg")
         .attr("width", w)
         .attr("height", h);
-      // console.log(layout);
+      console.log(layout);
       console.log(layout.qHyperCube.qMeasureInfo[0].qNumFormat);
 
       const goat = svg.append("g").attr("transform", "translate(0,0)");
@@ -466,6 +538,24 @@ define([
         .attr("text-anchor", "middle")
         .text(
           `${layout.qHyperCube.qDimensionInfo[0].qFallbackTitle.toUpperCase()} V/S ${layout.qHyperCube.qMeasureInfo[0].qFallbackTitle.toUpperCase()}`
+        )
+        .style(
+          "font-weight",
+          layout.myproperties.chartHeading === "bold" ||
+            layout.myproperties.chartHeading === "both"
+            ? "980"
+            : layout.myproperties.chartHeading === "none"
+            ? "none"
+            : "none"
+        )
+        .style(
+          "font-style",
+          layout.myproperties.chartHeading === "italic" ||
+            layout.myproperties.chartHeading === "both"
+            ? "italic"
+            : layout.myproperties.chartHeading === "none"
+            ? "none"
+            : "none"
         );
 
       let xAxis = () => {
@@ -640,18 +730,23 @@ define([
             }
           })
           .attr("opacity", `${layout.myproperties.gridOpacity}`)
+          .style("stroke-dasharray", () => {
+            if (layout.myproperties.gridLineFormate === "dashed") return "5 5";
+            else if (layout.myproperties.gridLineFormate === "dotted")
+              return "2 3.5";
+            else return "0 0";
+          })
           .call(
-            xAxis()
-              .tickSize(-(h - padding * 2))
-              .ticks(
-                layout.myproperties.gridScaling == "wide"
-                  ? 3
-                  : layout.myproperties.gridScaling == "medium"
-                  ? 8
-                  : layout.myproperties.gridScaling == "narrow"
-                  ? 18
-                  : 8
-              )
+            xAxis().tickSize(-(h - padding * 2))
+            // .ticks(
+            //   // layout.myproperties.gridScaling == "wide"
+            //   //   ? 3
+            //   //   : layout.myproperties.gridScaling == "medium"
+            //   //   ? 8
+            //   //   : layout.myproperties.gridScaling == "narrow"
+            //   //   ? 18
+            //   //   : 8
+            // )
           )
           .selectAll("text")
           .style("opacity", "0");
@@ -677,6 +772,12 @@ define([
             //   ",0)"
           )
           .attr("opacity", `${layout.myproperties.gridOpacity}`)
+          .style("stroke-dasharray", () => {
+            if (layout.myproperties.gridLineFormate === "dashed") return "5 5";
+            else if (layout.myproperties.gridLineFormate === "dotted")
+              return "2 3.5";
+            else return "0 0";
+          })
           .call(
             yAxis()
               .tickSize(-(w - padding * 2))
@@ -693,6 +794,52 @@ define([
           .selectAll("text")
           .style("opacity", "0");
         yGrid.select("path").style("stroke", "white");
+      }
+
+      //Legend
+
+      if (layout.legendSwitch) {
+        var legendGroup = svg
+          .append("g")
+          .attr(
+            "transform",
+            "translate(" + (w - padding * 2) + "," + padding + ")"
+          );
+        //  + layout.myprops.position +
+        var legendG = legendGroup
+          .selectAll(".legend")
+          .data(dataSet1)
+          .enter()
+          .append("g")
+          .attr("transform", function (d, i) {
+            return "translate(0," + i * 20 + ")";
+          })
+          .attr("class", "legend");
+
+        legendG.append("rect").attr("width", 10).attr("height", 10).attr(
+          "fill",
+          layout.myColor.color
+          // [
+          //   "#e41a1c",
+          //   "#377eb8",
+          //   "#4daf4a",
+          //   "#984ea3",
+          //   "#ff7f00",
+          //   "#ffff33",
+          //   "#a65628",
+          //   "#f781bf",
+          //   "#999999",
+          // ]
+        );
+
+        legendG
+          .append("text")
+          .text(function (d, i) {
+            return d[1];
+          })
+          .style("font-size", 12)
+          .attr("y", 10)
+          .attr("x", 11);
       }
 
       //needed for export
