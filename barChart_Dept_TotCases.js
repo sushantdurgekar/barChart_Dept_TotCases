@@ -40,6 +40,35 @@ define([
               label: "X-Y Axis",
               // component: "accordion",
               items: {
+                x_y_AxisLabel: {
+                  type: "string",
+                  label: "X-Y axis Label",
+                  component: "buttongroup",
+                  ref: "myproperties.x_y_AxisLabel",
+                  options: [
+                    {
+                      value: "bold",
+                      label: "Bold",
+                      tooltip: "Select for Bold",
+                    },
+                    {
+                      value: "italic",
+                      label: "Italic",
+                      tooltip: "Select for Italic",
+                    },
+                    {
+                      value: "both",
+                      label: "Both",
+                      tooltip: "Select for Bold and Italic",
+                    },
+                    {
+                      value: "none",
+                      label: "None",
+                      tooltip: "Select for None",
+                    },
+                  ],
+                  defaultValue: "none",
+                },
                 yAxisPos: {
                   type: "string",
                   component: "dropdown",
@@ -88,6 +117,16 @@ define([
                   ],
                   defaultValue: "medium",
                 },
+                yAxisLabelSize: {
+                  type: "number",
+                  component: "slider",
+                  label: "Y-Axis Label Size",
+                  ref: "myproperties.yAxisLabelSize",
+                  min: 7,
+                  max: 32,
+                  step: 1,
+                  defaultValue: 18,
+                },
                 xAxisPos: {
                   type: "string",
                   component: "dropdown",
@@ -135,6 +174,16 @@ define([
                     },
                   ],
                   defaultValue: "auto",
+                },
+                xAxisLabelSize: {
+                  type: "number",
+                  component: "slider",
+                  label: "X-Axis Label Size",
+                  ref: "myproperties.xAxisLabelSize",
+                  min: 7,
+                  max: 32,
+                  step: 1,
+                  defaultValue: 18,
                 },
               },
             },
@@ -715,30 +764,37 @@ define([
 
       var mouseover = function (e, d) {
         // console.log("zgviukiv");
-        // console.log(e, d);
-        var subgroupName = d[1];
-        var subgroupValue = d[0];
+        console.log(e, d);
         tooltip.html(
-          ` ${layout.qHyperCube.qDimensionInfo[0].qFallbackTitle} : ${subgroupName} <br>  ${layout.qHyperCube.qMeasureInfo[0].qFallbackTitle} : ${subgroupValue}`
+          ` ${layout.qHyperCube.qDimensionInfo[0].qFallbackTitle} : ${d[1]} <br>  ${layout.qHyperCube.qMeasureInfo[0].qFallbackTitle} : ${d[0]}`
         );
 
         // tooltip.style("left", e.clientX + "px").style("top", e.clientY + "px");
       };
       var mousemove = function (e) {
-        // console.log(e.clientX, e.clientY);
+        // console.log(e);
         if (layout.tooltipSwitch) {
           tooltip.transition().duration(20).style("opacity", 1);
+          // select("#" + layout.qInfo.qId + " g.tooltip").attr(
+          //   "transform-origin",
+          //   "translate(" +
+          //     e.toElement.x.animVal.value +
+          //     "," +
+          //     e.toElement.y.animVal.value +
+          //     ")"
+          // );
           tooltip
             .style("left", e.clientX + "px")
             .style("top", e.clientY + "px");
+          // tooltip
+          //   .style("left", e.toElement.x.animVal.value + "px")
+          //   .style("top", e.toElement.y.animVal.value + "px");
         }
 
         // .style("transform", "translateY(-55%)")
       };
 
-      var mouseleave = function (d) {
-        tooltip.style("opacity", 0);
-      };
+      var mouseleave = (d) => tooltip.style("opacity", 0);
 
       goat
         .selectAll("rect")
@@ -876,6 +932,18 @@ define([
         .call(xAxis());
       xLable.select("path").style("stroke", layout.xAxisColor.color);
 
+      var wrap = function () {
+        var self = d3.select(this),
+          textLength = self.node().getComputedTextLength(),
+          text = self.text();
+        while (textLength > 50 && text.length > 0) {
+          console.log(textLength, text);
+          text = text.slice(0, -1);
+          self.text(text + "...");
+          textLength = self.node().getComputedTextLength();
+        }
+      };
+
       xLable
         .selectAll("text")
         // .attr(
@@ -904,7 +972,11 @@ define([
           } else {
             return "middle";
           }
-        });
+        })
+        .each(wrap)
+        .on("mouseover", mouseover)
+        .on("mousemove", mousemove)
+        .on("mouseleave", mouseleave);
 
       xLable
         .append("text")
@@ -919,10 +991,28 @@ define([
         .attr("dy", "1em")
         .attr("x", w / 2)
         .attr("text-anchor", "middle")
-        .attr("font-size", "18px")
+        .attr("font-size", `${layout.myproperties.xAxisLabelSize}px`)
         // .attr("stroke", "green")
         .attr("fill", "black")
-        .text(layout.qHyperCube.qDimensionInfo[0].qFallbackTitle);
+        .text(layout.qHyperCube.qDimensionInfo[0].qFallbackTitle)
+        .style(
+          "font-weight",
+          layout.myproperties.x_y_AxisLabel === "bold" ||
+            layout.myproperties.x_y_AxisLabel === "both"
+            ? "980"
+            : layout.myproperties.x_y_AxisLabel === "none"
+            ? "none"
+            : "none"
+        )
+        .style(
+          "font-style",
+          layout.myproperties.x_y_AxisLabel === "italic" ||
+            layout.myproperties.x_y_AxisLabel === "both"
+            ? "italic"
+            : layout.myproperties.x_y_AxisLabel === "none"
+            ? "none"
+            : "none"
+        );
       // g.append("g")
       //   .attr("transform", "translate(" + padding / 4 + ",0)")
       //   .attr("transform", "rotate(-90)")
@@ -958,7 +1048,7 @@ define([
       yLabel
         .append("text")
         .attr("transform", "rotate(-90)")
-        .attr("x", (-h + padding) / 2)
+        .attr("x", -h / 2)
         .attr("y", () => {
           if (layout.myproperties.positionY === "left") {
             return padding / 2;
@@ -969,11 +1059,29 @@ define([
           }
         })
         .attr("dy", -padding)
-        .attr("text-anchor", "end")
-        .attr("font-size", "18px")
+        .attr("text-anchor", "middle")
+        .attr("font-size", `${layout.myproperties.yAxisLabelSize}px`)
         .attr("fill", "black")
         // .attr("stroke", "black")
-        .text(layout.qHyperCube.qMeasureInfo[0].qFallbackTitle);
+        .text(layout.qHyperCube.qMeasureInfo[0].qFallbackTitle)
+        .style(
+          "font-weight",
+          layout.myproperties.x_y_AxisLabel === "bold" ||
+            layout.myproperties.x_y_AxisLabel === "both"
+            ? "980"
+            : layout.myproperties.x_y_AxisLabel === "none"
+            ? "none"
+            : "none"
+        )
+        .style(
+          "font-style",
+          layout.myproperties.x_y_AxisLabel === "italic" ||
+            layout.myproperties.x_y_AxisLabel === "both"
+            ? "italic"
+            : layout.myproperties.x_y_AxisLabel === "none"
+            ? "none"
+            : "none"
+        );
 
       //Grid
       if (layout.gridSwitch === true) {
