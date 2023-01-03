@@ -1,8 +1,10 @@
 define([
+  "jquery",
+  //mashup and extension interface
   "qlik",
   "https://d3js.org/d3.v7.min.js",
   "css!./barChart_Dept_TotCases.css",
-], function (qlik, d3) {
+], function ($, qlik, d3) {
   return {
     initialProperties: {
       qHyperCubeDef: {
@@ -23,12 +25,12 @@ define([
         dimensions: {
           uses: "dimensions",
           min: 1,
-          max: 1,
+          max: 2,
         },
         measures: {
           uses: "measures",
           min: 1,
-          max: 1,
+          max: 3,
         },
         sorting: {
           uses: "sorting",
@@ -199,14 +201,50 @@ define([
                   options: [
                     {
                       value: true,
-                      label: "On",
+                      label: "Basic",
                     },
                     {
                       value: false,
-                      label: "Off",
+                      label: "Custom",
                     },
                   ],
-                  defaultValue: false,
+                  defaultValue: true,
+                },
+                tooltipChart: {
+                  type: "string",
+                  label: "Chart",
+                  component: "dropdown",
+                  ref: "tooltipChart.classify",
+                  options: [
+                    {
+                      value: "cityBarchart",
+                      label: "City barchart",
+                      tooltip: "Select for City barchart",
+                    },
+                    {
+                      value: "sales$ByStates",
+                      label: "Sales by states",
+                      tooltip: "Select for Sales by states",
+                    },
+                    {
+                      value: "marginByMonth",
+                      label: "Margin by month",
+                      tooltip: "Select for Margin by month",
+                    },
+                    {
+                      value: "filterBySalesRep",
+                      label: "Filter by Sales Rep",
+                      tooltip: "Select for Filter by Sales Rep",
+                    },
+                  ],
+                  defaultValue: "cityBarchart",
+                },
+                tooltipImage: {
+                  label: "Image",
+                  component: "media",
+                  ref: "myImage.src",
+                  layoutRef: "myImage.src",
+                  type: "string",
                 },
               },
             },
@@ -242,14 +280,57 @@ define([
                   ],
                   defaultValue: "none",
                 },
-                MyColorPicker: {
+                BarColor: {
+                  type: "string",
+                  component: "dropdown",
                   label: "Bar Color",
+                  ref: "barColor.colors.by",
+                  options: [
+                    {
+                      label: "By Single",
+                      value: "single",
+                    },
+                    {
+                      label: "By Dimension",
+                      value: "dimension",
+                    },
+                    {
+                      label: "By Measure",
+                      value: "measure",
+                    },
+                  ],
+                  defaultValue: "single",
+                },
+                // barColorSingleM: {
+                //   label: "Color",
+                //   component: "color-picker",
+                //   ref: "barColor.colors.myColor",
+                //   type: "object",
+                //   defaultValue: {
+                //     color: "006580",
+                //     index: "-1",
+                //   },
+                //   // show: console.log(),
+                //   show: function (layout) {
+                //     console.log(layout);
+                //     if (layout.barColor.colors === ("single" || "measure"))
+                //       return true;
+                //     return false;
+                //   },
+                // },
+                MyColorPicker: {
+                  label: "Select Color",
                   component: "color-picker",
-                  ref: "myColor",
+                  ref: "barColor.colors.myColor",
                   type: "object",
                   defaultValue: {
                     color: "006580",
                     index: "-1",
+                  },
+                  show: function (e) {
+                    console.log(e);
+                    if (e.barColor.colors.by === "dimension") return false;
+                    else return true;
                   },
                 },
                 BarOpacity: {
@@ -265,7 +346,7 @@ define([
                 GridFormate: {
                   label: "Grid",
                   items: {
-                    MyTooltipSwitch: {
+                    MyGridSwitch: {
                       type: "boolean",
                       label: "Grid",
                       component: "switch",
@@ -339,7 +420,7 @@ define([
                 LegendOption: {
                   label: "Legend",
                   items: {
-                    MyTooltipSwitch: {
+                    MyLegendSwitch: {
                       type: "boolean",
                       label: "Legend",
                       component: "switch",
@@ -361,7 +442,7 @@ define([
                 ValueLabels: {
                   label: "Value Labels",
                   items: {
-                    MyTooltipSwitch: {
+                    MyValueLabelSwitch: {
                       type: "boolean",
                       label: "Value Label",
                       component: "switch",
@@ -669,6 +750,21 @@ define([
         "#900c00",
         "#900c00",
       ];
+
+      var color = d3
+        .scaleOrdinal()
+        .range([
+          "#e41a1c",
+          "#377eb8",
+          "#4daf4a",
+          "#984ea3",
+          "#ff7f00",
+          "#ffff33",
+          "#a65628",
+          "#f781bf",
+          "#999999",
+        ]);
+      console.log(color(8));
       // console.log(dataSet1);
 
       // const dataset = [12, 31, 22, 17, 25, 18, 29, 14, 9];
@@ -705,7 +801,7 @@ define([
         .attr("width", w)
         .attr("height", h);
       console.log(layout);
-      console.log(layout.qHyperCube.qMeasureInfo[0].qNumFormat);
+      // console.log(layout.qHyperCube.qMeasureInfo[0].qNumFormat);
 
       const goat = svg.append("g").attr("transform", "translate(0,0)");
       // const xScale = d3
@@ -764,10 +860,38 @@ define([
 
       var mouseover = function (e, d) {
         // console.log("zgviukiv");
-        console.log(e, d);
-        tooltip.html(
-          ` ${layout.qHyperCube.qDimensionInfo[0].qFallbackTitle} : ${d[1]} <br>  ${layout.qHyperCube.qMeasureInfo[0].qFallbackTitle} : ${d[0]}`
-        );
+        // console.log(e, d);
+        if (layout.tooltipSwitch) {
+          tooltip.html(
+            ` ${layout.qHyperCube.qDimensionInfo[0].qFallbackTitle} : ${d[1]} <br>  ${layout.qHyperCube.qMeasureInfo[0].qFallbackTitle} : ${d[0]}`
+          );
+        } else {
+          tooltip.html(
+            ` ${layout.qHyperCube.qDimensionInfo[0].qFallbackTitle} : ${d[1]} <br>  ${layout.qHyperCube.qMeasureInfo[0].qFallbackTitle} : ${d[0]} <br> <div id="chartTooltip" style="height:50px;"></div> <br> <br> <div id="chartTooltip1" style="height:100px;"></div> <br>`
+            // <img src="${layout.myImage.src}" alt="image" width="90" height="60">`
+          );
+          // Chart Visualisation
+          qlik
+            .currApp()
+            .visualization.get("Jkks")
+            // .create("barchart", ["NetScoreName", "=Count(NetScoreName)"], {
+            //   showTitles: true,
+            //   title: "Net scores",
+            // })
+            .then(function (vis) {
+              // console.log(vis);
+              vis.show("chartTooltip");
+            });
+          qlik
+            .currApp()
+            .visualization.create("barchart", ["City", "=Count(City)"], {
+              showTitles: true,
+              title: "City",
+            })
+            .then(function (vis) {
+              vis.show("chartTooltip1");
+            });
+        }
 
         // tooltip.style("left", e.clientX + "px").style("top", e.clientY + "px");
       };
@@ -789,12 +913,29 @@ define([
           // tooltip
           //   .style("left", e.toElement.x.animVal.value + "px")
           //   .style("top", e.toElement.y.animVal.value + "px");
+        } else {
+          tooltip.transition().duration(20).style("opacity", 1);
+          // select("#" + layout.qInfo.qId + " g.tooltip").attr(
+          //   "transform-origin",
+          //   "translate(" +
+          //     e.toElement.x.animVal.value +
+          //     "," +
+          //     e.toElement.y.animVal.value +
+          //     ")"
+          // );
+          tooltip
+            .style("left", e.clientX + "px")
+            .style("top", e.clientY + "px");
+          // tooltip
+          //   .style("left", e.toElement.x.animVal.value + "px")
+          //   .style("top", e.toElement.y.animVal.value + "px");
         }
 
         // .style("transform", "translateY(-55%)")
       };
 
       var mouseleave = (d) => tooltip.style("opacity", 0);
+      let colorS, prevColor;
 
       goat
         .selectAll("rect")
@@ -806,16 +947,45 @@ define([
         .attr("y", (d, i) => yScale(d[0]))
         .attr("width", xScale.bandwidth() / 2)
         .attr("height", (d, i) => h - yScale(d[0]) - padding)
-        .attr("fill", (d) => {
+        .attr("fill", (d, i) => {
           if (d[1] === "-") {
             return "#dcdcdc";
           } else {
-            let color = [...Array(6)]
-              .map(() => Math.floor(Math.random() * 16).toString(16))
-              .join("");
-            // console.log(color);
-            return layout.myColor.color;
-            // return color;
+            if (layout.barColor.colors.by == "single") {
+              // console.log(i, color(i));
+              return layout.barColor.colors.myColor.color;
+              // return layout.myColor.color;
+              // return color;
+            } else if (layout.barColor.colors.by == "dimension") {
+              // console.log(i, color(i));
+              if (i === 0) prevColor = "000000";
+              else prevColor = colorS;
+              colorS = [...Array(6)]
+                .map(() => Math.floor(Math.random() * 16).toString(16))
+                .join("");
+              while (colorS == prevColor) {
+                colorS = [...Array(6)]
+                  .map(() => Math.floor(Math.random() * 16).toString(16))
+                  .join("");
+                console.log(colorS);
+              }
+
+              return `#${colorS}`;
+              // return `${color(i)}`;
+            } else if (layout.barColor.colors.by == "measure") {
+              let mColor = layout.barColor.colors.myColor.color;
+              // console.log(
+              //   mColor,
+              //   mColor.substr(1, 2),
+              //   parseInt(mColor.substr(1, 2), 16)
+              // );
+              return `rgb(${parseInt(mColor.substr(1, 2), 16)} ${parseInt(
+                mColor.substr(3, 2),
+                16
+              )} ${parseInt(mColor.substr(5, 2), 16)} / ${d[0] + 40}%)`;
+              // return layout.myColor.color;
+              // return color;
+            }
           }
         })
         .attr("opacity", `${layout.myproperties.barOpacity}`)
@@ -843,6 +1013,7 @@ define([
           .style("text-anchor", "middle")
           .attr("fill", "red");
       }
+      // layout.title = `${layout.qHyperCube.qDimensionInfo[0].qFallbackTitle.toUpperCase()} V/S ${layout.qHyperCube.qMeasureInfo[0].qFallbackTitle.toUpperCase()}`;
       goat
         .append("text")
         .attr("transform", "translate(0,0)")
@@ -884,7 +1055,7 @@ define([
       };
       let yAxis = () => {
         if (layout.myproperties.positionY == "right") {
-          console.log(layout.myproperties.positionY);
+          // console.log(layout.myproperties.positionY);
           return d3
             .axisRight(yScale)
             .ticks(
@@ -937,7 +1108,7 @@ define([
           textLength = self.node().getComputedTextLength(),
           text = self.text();
         while (textLength > 50 && text.length > 0) {
-          console.log(textLength, text);
+          // console.log(textLength, text);
           text = text.slice(0, -1);
           self.text(text + "...");
           textLength = self.node().getComputedTextLength();
