@@ -5,6 +5,27 @@ define([
   "https://d3js.org/d3.v7.min.js",
   "css!./barChart_Dept_TotCases.css",
 ], function ($, qlik, d3) {
+  let colorS, prevColor;
+  let colorA = [];
+
+  for (let i = 0; i < 100; i++) {
+    if (i === 0) prevColor = "000000";
+    else prevColor = colorS;
+    colorS = [...Array(6)]
+      .map(() => Math.floor(Math.random() * 16).toString(16))
+      .join("");
+    while (colorS == prevColor) {
+      colorS = [...Array(6)]
+        .map(() => Math.floor(Math.random() * 16).toString(16))
+        .join("");
+      // console.log(colorS);
+    }
+    colorA.push(`#${colorS}`);
+  }
+  console.log(colorA);
+  var color = d3.scaleOrdinal().range([...colorA]);
+  // console.log(color(8));
+
   return {
     initialProperties: {
       qHyperCubeDef: {
@@ -245,6 +266,10 @@ define([
                     },
                   ],
                   defaultValue: "cityBarchart",
+                  show: function (e) {
+                    if (!e.tooltipSwitch) return true;
+                    else return false;
+                  },
                 },
                 tooltipImage: {
                   label: "Image",
@@ -252,6 +277,10 @@ define([
                   ref: "myImage.src",
                   layoutRef: "myImage.src",
                   type: "string",
+                  show: function (e) {
+                    if (!e.tooltipSwitch) return true;
+                    else return false;
+                  },
                 },
               },
             },
@@ -431,7 +460,7 @@ define([
                       type: "boolean",
                       label: "Legend",
                       component: "switch",
-                      ref: "legendSwitch",
+                      ref: "legend.legendSwitch",
                       options: [
                         {
                           value: true,
@@ -443,6 +472,35 @@ define([
                         },
                       ],
                       defaultValue: false,
+                    },
+                    legendPos: {
+                      type: "string",
+                      component: "dropdown",
+                      label: "Legend Position",
+                      ref: "legend.legendPos",
+                      options: [
+                        {
+                          value: "top",
+                          label: "Top",
+                        },
+                        {
+                          value: "bottom",
+                          label: "Bottom",
+                        },
+                        {
+                          value: "left",
+                          label: "Left",
+                        },
+                        {
+                          value: "right",
+                          label: "Right",
+                        },
+                      ],
+                      defaultValue: "right",
+                      show: function (e) {
+                        if (e.legend.legendSwitch) return true;
+                        else return false;
+                      },
                     },
                   },
                   show: function (e) {
@@ -805,7 +863,15 @@ define([
       console.log(layout);
       // console.log(layout.qHyperCube.qMeasureInfo[0].qNumFormat);
 
-      const goat = svg.append("g").attr("transform", "translate(0,0)");
+      const goat = svg.append("g").attr("transform", () => {
+        if (layout.legend.legendPos == "right")
+          return "translate(" + -padding / 3 + "," + padding / 4 + ")";
+        else if (layout.legend.legendPos == "left")
+          return "translate(" + padding / 1.2 + "," + padding / 4 + ")";
+        else if (layout.legend.legendPos == "top")
+          return "translate(0," + padding / 4 + ")";
+        else if (layout.legend.legendPos == "bottom") return "translate(0,0)";
+      });
       // const xScale = d3
       //   .scaleLinear()
       //   .domain([0, 45])
@@ -937,26 +1003,6 @@ define([
       };
 
       var mouseleave = (d) => tooltip.style("opacity", 0);
-      let colorS, prevColor;
-      let colorA = [];
-
-      for (let i = 0; i < layout.qHyperCube.qDataPages[0].qMatrix.length; i++) {
-        if (i === 0) prevColor = "000000";
-        else prevColor = colorS;
-        colorS = [...Array(6)]
-          .map(() => Math.floor(Math.random() * 16).toString(16))
-          .join("");
-        while (colorS == prevColor) {
-          colorS = [...Array(6)]
-            .map(() => Math.floor(Math.random() * 16).toString(16))
-            .join("");
-          // console.log(colorS);
-        }
-        colorA.push(`#${colorS}`);
-      }
-      console.log(colorA);
-      var color = d3.scaleOrdinal().range([...colorA]);
-      // console.log(color(8));
 
       goat
         .selectAll("rect")
@@ -1024,35 +1070,35 @@ define([
           .attr("fill", "red");
       }
       // layout.title = `${layout.qHyperCube.qDimensionInfo[0].qFallbackTitle.toUpperCase()} V/S ${layout.qHyperCube.qMeasureInfo[0].qFallbackTitle.toUpperCase()}`;
-      goat
-        .append("text")
-        .attr("transform", "translate(0,0)")
-        .attr("x", w / 2)
-        .attr("y", padding / 4)
-        .attr("font-size", "24px")
-        .attr("text-anchor", "middle")
-        .text(
-          `${layout.qHyperCube.qDimensionInfo[0].qFallbackTitle.toUpperCase()} V/S ${layout.qHyperCube.qMeasureInfo[0].qFallbackTitle.toUpperCase()}`
-        )
-        .style(
-          "font-weight",
-          layout.myproperties.chartHeading === "bold" ||
-            layout.myproperties.chartHeading === "both"
-            ? "980"
-            : layout.myproperties.chartHeading === "none"
-            ? "none"
-            : "none"
-        )
-        .style(
-          "font-style",
-          layout.myproperties.chartHeading === "italic" ||
-            layout.myproperties.chartHeading === "both"
-            ? "italic"
-            : layout.myproperties.chartHeading === "none"
-            ? "none"
-            : "none"
-        );
 
+      // goat
+      //   .append("text")
+      //   .attr("transform", "translate(0,0)")
+      //   .attr("x", w / 2)
+      //   .attr("y", padding / 4)
+      //   .attr("font-size", "24px")
+      //   .attr("text-anchor", "middle")
+      //   .text(
+      //     `${layout.qHyperCube.qDimensionInfo[0].qFallbackTitle.toUpperCase()} V/S ${layout.qHyperCube.qMeasureInfo[0].qFallbackTitle.toUpperCase()}`
+      //   )
+      //   .style(
+      //     "font-weight",
+      //     layout.myproperties.chartHeading === "bold" ||
+      //       layout.myproperties.chartHeading === "both"
+      //       ? "980"
+      //       : layout.myproperties.chartHeading === "none"
+      //       ? "none"
+      //       : "none"
+      //   )
+      //   .style(
+      //     "font-style",
+      //     layout.myproperties.chartHeading === "italic" ||
+      //       layout.myproperties.chartHeading === "both"
+      //       ? "italic"
+      //       : layout.myproperties.chartHeading === "none"
+      //       ? "none"
+      //       : "none"
+      //   );
       let xAxis = () => {
         if (layout.myproperties.positionX == "top") {
           // console.log(layout.myproperties.positionX);
@@ -1345,21 +1391,40 @@ define([
 
       //Legend
 
-      if (layout.legendSwitch) {
-        var legendGroup = svg
-          .append("g")
-          .attr(
-            "transform",
-            "translate(" + (w - padding * 2) + "," + padding + ")"
-          );
+      if (layout.legend.legendSwitch) {
+        var legendGroup = svg.append("g").attr("transform", () => {
+          if (layout.legend.legendPos == "right")
+            return "translate(" + (w - padding + 5) + "," + padding + ")";
+          else if (layout.legend.legendPos == "left")
+            return "translate(" + 5 + "," + padding + ")";
+          else if (layout.legend.legendPos == "top")
+            return "translate(" + w / 3 + "," + padding / 4 + ")";
+          else if (layout.legend.legendPos == "bottom")
+            return "translate(" + w / 3 + "," + (h - padding / 4) + ")";
+        });
         //  + layout.myprops.position +
+        let letterLen = 0;
+
         var legendG = legendGroup
           .selectAll(".legend")
           .data(dataSet1)
           .enter()
           .append("g")
+          // .attr("transform", function (d, i) {
+          //   return "translate(0," + i * 20 + ")";
+          // })
           .attr("transform", function (d, i) {
-            return "translate(0," + i * 20 + ")";
+            if (
+              layout.legend.legendPos == "right" ||
+              layout.legend.legendPos == "left"
+            )
+              return "translate(0," + i * 20 + ")";
+            else if (
+              layout.legend.legendPos == "top" ||
+              layout.legend.legendPos == "bottom"
+            )
+              return "translate(" + (i * 100 + 10 * letterLen) + ",0)";
+            letterLen = d[1].length;
           })
           .attr("class", "legend");
 
