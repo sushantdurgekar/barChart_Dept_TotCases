@@ -22,15 +22,22 @@ define([
       type: "items",
       component: "accordion",
       items: {
-        dimensions: {
-          uses: "dimensions",
-          min: 1,
-          max: 2,
-        },
-        measures: {
-          uses: "measures",
-          min: 1,
-          max: 3,
+        Data: {
+          label: "Data",
+          items: {
+            dimensions: {
+              label: "Dimensions",
+              uses: "dimensions",
+              min: 1,
+              max: 2,
+            },
+            measures: {
+              label: "Measures",
+              uses: "measures",
+              min: 1,
+              max: 3,
+            },
+          },
         },
         sorting: {
           uses: "sorting",
@@ -328,7 +335,7 @@ define([
                     index: "-1",
                   },
                   show: function (e) {
-                    console.log(e);
+                    // console.log(e);
                     if (e.barColor.colors.by === "dimension") return false;
                     else return true;
                   },
@@ -437,6 +444,15 @@ define([
                       ],
                       defaultValue: false,
                     },
+                  },
+                  show: function (e) {
+                    // console.log(e);
+                    if (
+                      e.barColor.colors.by === "dimension" ||
+                      e.barColor.colors.by === "measure"
+                    )
+                      return true;
+                    else return false;
                   },
                 },
                 ValueLabels: {
@@ -751,20 +767,6 @@ define([
         "#900c00",
       ];
 
-      var color = d3
-        .scaleOrdinal()
-        .range([
-          "#e41a1c",
-          "#377eb8",
-          "#4daf4a",
-          "#984ea3",
-          "#ff7f00",
-          "#ffff33",
-          "#a65628",
-          "#f781bf",
-          "#999999",
-        ]);
-      console.log(color(8));
       // console.log(dataSet1);
 
       // const dataset = [12, 31, 22, 17, 25, 18, 29, 14, 9];
@@ -936,6 +938,25 @@ define([
 
       var mouseleave = (d) => tooltip.style("opacity", 0);
       let colorS, prevColor;
+      let colorA = [];
+
+      for (let i = 0; i < layout.qHyperCube.qDataPages[0].qMatrix.length; i++) {
+        if (i === 0) prevColor = "000000";
+        else prevColor = colorS;
+        colorS = [...Array(6)]
+          .map(() => Math.floor(Math.random() * 16).toString(16))
+          .join("");
+        while (colorS == prevColor) {
+          colorS = [...Array(6)]
+            .map(() => Math.floor(Math.random() * 16).toString(16))
+            .join("");
+          // console.log(colorS);
+        }
+        colorA.push(`#${colorS}`);
+      }
+      console.log(colorA);
+      var color = d3.scaleOrdinal().range([...colorA]);
+      // console.log(color(8));
 
       goat
         .selectAll("rect")
@@ -958,20 +979,9 @@ define([
               // return color;
             } else if (layout.barColor.colors.by == "dimension") {
               // console.log(i, color(i));
-              if (i === 0) prevColor = "000000";
-              else prevColor = colorS;
-              colorS = [...Array(6)]
-                .map(() => Math.floor(Math.random() * 16).toString(16))
-                .join("");
-              while (colorS == prevColor) {
-                colorS = [...Array(6)]
-                  .map(() => Math.floor(Math.random() * 16).toString(16))
-                  .join("");
-                console.log(colorS);
-              }
 
-              return `#${colorS}`;
-              // return `${color(i)}`;
+              // return `#${colorS}`;
+              return `${color(i)}`;
             } else if (layout.barColor.colors.by == "measure") {
               let mColor = layout.barColor.colors.myColor.color;
               // console.log(
@@ -1357,11 +1367,14 @@ define([
           .append("rect")
           .attr("width", 10)
           .attr("height", 10)
-          .attr("fill", layout.myColor.color);
+          .attr("fill", (d, i) => {
+            return `${color(i)}`;
+          });
 
         legendG
           .append("text")
           .text(function (d, i) {
+            // console.log(d);
             return d[1];
           })
           .style("font-size", 12)
